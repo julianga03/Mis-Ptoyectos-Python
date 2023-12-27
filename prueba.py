@@ -1,37 +1,65 @@
-import os
-import sys
-import time
-from pywinauto import Application
+import imaplib
+import email
+from email.header import decode_header
+from unidecode import unidecode
 
-# Esperar un momento antes de comenzar la automatización
-time.sleep(5)
+RUTA_LOG = r"C:\ProgramData\MyBots\004 - Datacredito\Temp\Informacion XML.txt"
 
-# Ruta del archivo ejecutable de Microsoft Word
-word_path = r'C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE'
+# Configurar Credenciales
+email_address = 'juliangalindo3214@gmail.com'
+password = 'nckqmrxgrcyxfjml'
 
-# Crear una instancia de la aplicación Microsoft Word
-word_app = Application(backend='uia').start(word_path)
+# Conéctar al servidor IMAP de Gmail
+mail = imaplib.IMAP4_SSL('imap.gmail.com')
+mail.login(email_address, password)
 
-# Esperar a que la aplicación se abra completamente
-word_app.wait_cpu_usage_lower(threshold=1, timeout=10, usage_interval=1)
+# Seleccionar la carpeta "Recibidos" (Inbox)
+mail.select('Inbox')
 
-# Obtener la ventana principal de Word
-main_window = word_app.window(title_re='.*Word')
+# Realizar una búsqueda utilizando el filtro X-GM-RAW para excluir etiquetas específicas
+status, message_numbers = mail.search(None, 'X-GM-RAW "category:primary is:unread -label:social -label:promotions"')
 
-# Imprimir los identificadores de control en la consola
-#main_window.print_control_identifiers()
+if status == 'OK':
+    message_numbers = message_numbers[0].split()
+    for num in message_numbers:
+        status, message_data = mail.fetch(num, '(RFC822)')
+        if status == 'OK':
+            raw_email = message_data[0][1]
+            msg = email.message_from_bytes(raw_email)
 
-#Imprimir los identificadores de control en un txt__________
-# Crear un archivo de texto para guardar la salida
-output_file = 'C:\AutomationPy\identificadores.txt'
+            # Decodifica el asunto (puede contener caracteres especiales)
+            subject, encoding = decode_header(msg['Subject'])[0]
+            if encoding:
+                subject = subject.decode(encoding)
+                subject = unidecode(subject)
+            print(subject)
+            mail.store(num, '-FLAGS', '(\Seen)') # Esto marca el correo como no leído
 
-# Redirigir la salida estándar a un archivo
-with open(output_file, 'w') as file:
-    sys.stdout = file
-    main_window.print_control_identifiers()
+            if subject.lower() == "codigo":
+                #mail.store(num, '-FLAGS', '(\Seen)') # Esto marca el correo como no leído
+                mail.store(num, '+FLAGS', '(\Seen)') # Esto marca el correo como leído
+                #mail.store(num, '+FLAGS', '(\Deleted)') # Esto Borra el correo
 
-# Restaurar la salida estándar
-sys.stdout = sys.__stdout__
+                #Extraer el cuerpo del correo
+                if msg.is_multipart():
+                    body=''
+                    for part in msg.walk():
+                        content_type = part.get_content_type()
+                        content_disposition = str(part.get("Content-Disposition"))
 
-# Cerrar Microsoft Word
-main_window.close()
+                        if "attachment" not in content_disposition:
+                            body += part.get_payload(decode=True).decode('utf-8', 'ignore')
+
+                else:
+                    body = msg.get_payload(decode=True).decode('utf-8', 'ignore')
+
+                # Almacenar el cuerpo en una variable
+                codigo_body = body
+                #print(codigo_body)
+
+                with open(RUTA_LOG, "w") as archivo:
+                    archivo.write(codigo_body)
+
+# Cierra la conexión
+mail.logout()
+print("saliocorreo")

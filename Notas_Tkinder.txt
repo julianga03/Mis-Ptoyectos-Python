@@ -1,0 +1,40 @@
+import tkinter
+
+ventana = tkinter.Tk()
+ventana.geometry("1000x700")
+
+#Colocar etiquetas
+etiquetaTitulo = tkinter.Label(ventana, text="Gestor de Bots", bg = "gray")
+etiquetaTitulo.pack(fill = tkinter.X)
+
+etiquetaCaja = tkinter.Label(ventana)
+etiquetaCaja.pack()
+
+#colocar bottones y usarlos
+def saludo():
+    print("Hola")
+
+def textoDeLaCaja():
+    texto_de_caja = cajaTexto.get()
+    etiquetaCaja["text"] = texto_de_caja
+    
+
+boton1 = tkinter.Button(ventana, text = "Presiona", padx = 10, pady = 5, command = saludo)
+boton1.pack()
+
+#Cajas texto
+cajaTexto = tkinter.Entry(ventana, font = "Helvetica 10")
+cajaTexto.pack()
+
+botonObtenerTexto = tkinter.Button(ventana, text = "Obtener", command = textoDeLaCaja)
+botonObtenerTexto.pack()
+
+#Arreglar los elementos en una posicion
+botonObtenerTexto.grid(row = 0, column = 0)
+cajaTexto.grid(row = 0, column = 1)
+
+
+
+
+
+ventana.mainloop()
